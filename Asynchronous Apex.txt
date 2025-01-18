@@ -1,0 +1,229 @@
+ Asynchronous Apex
+
+
+1.	  Use Future Methods from (module - Asynchronous Apex) 
+2.	 
+3.	------------------------------------------------- 
+4.	SOURCE CODE1: 
+5.	 
+6.	public class AccountProcessor { 
+7.	@future 
+8.	public static void countContacts(List<Id> accountIds){ 
+9.	List<Account> accounts = [Select Id, Name from Account Where Id IN : accountIds]; 
+10.	List<Account> updatedAccounts = new List<Account>(); 
+11.	for(Account account : accounts){ 
+12.	account.Number_of_Contacts__c = [Select count() from Contact Where AccountId =: account.Id]; 
+13.	System.debug('No Of Contacts = ' + account.Number_of_Contacts__c); 
+14.	updatedAccounts.add(account); 
+15.	} 
+16.	update updatedAccounts; 
+17.	    } } 
+18.	 
+19.	------------------------------------------------- 
+20.	Source CODE2: 
+21.	 
+22.	@isTest 
+23.	public class AccountProcessorTest { 
+24.	@isTest 
+25.	public static void testNoOfContacts(){ 
+26.	Account a = new Account(); 
+27.	a.Name = 'Test Account'; 
+28.	Insert a; 
+29.	Contact c = new Contact(); 
+30.	c.FirstName = 'Bob'; 
+31.	c.LastName = 'Willie'; 
+32.	c.AccountId = a.Id; 
+33.	Contact c2 = new Contact(); 
+34.	c2.FirstName = 'Tom'; 
+35.	c2.LastName = 'Cruise'; 
+36.	c2.AccountId = a.Id; 
+37.	List<Id> acctIds = new List<Id>(); 
+38.	acctIds.add(a.Id); 
+39.	Test.startTest(); 
+40.	AccountProcessor.countContacts(acctIds); 
+41.	Test.stopTest(); 
+42.	    } } 
+43.	 
+
+
+2)
+
+1.	Use Batch Apex from (module - Asynchronous Apex) 
+2.	 
+3.	------------------------------------------------- 
+4.	SOURCE CODE1: LeadProcessor 
+5.	 
+6.	public class LeadProcessor implements Database.Batchable<sObject> { 
+7.	public Database.QueryLocator start(Database.BatchableContext bc) { 
+8.	return Database.getQueryLocator([Select LeadSource From Lead ]); 
+9.	} 
+10.	public void execute(Database.BatchableContext bc, List<Lead> leads){ 
+11.	for (Lead Lead : leads) { 
+12.	lead.LeadSource = 'Dreamforce'; 
+13.	} 
+14.	update leads; 
+15.	} 
+16.	public void finish(Database.BatchableContext bc){ 
+17.	} } 
+18.	 
+19.	------------------------------------------------- 
+20.	SOURCE CODE2: LeadProcessorTest 
+21.	 
+22.	@isTest 
+23.	public class LeadProcessorTest { 
+24.	@testSetup 
+25.	static void setup() { 
+26.	List<Lead> leads = new List<Lead>(); 
+27.	for(Integer counter=0 ;counter <200;counter++){ 
+28.	Lead lead = new Lead(); 
+29.	lead.FirstName ='FirstName'; 
+30.	lead.LastName ='LastName'+counter; 
+31.	lead.Company ='demo'+counter; 
+32.	leads.add(lead); 
+33.	} 
+34.	insert leads; 
+35.	} 
+36.	@isTest static void test() { 
+37.	Test.startTest(); 
+38.	LeadProcessor leadProcessor = new LeadProcessor(); 
+39.	Id batchId = Database.executeBatch(leadProcessor); 
+40.	Test.stopTest();    
+41.	    } } 
+42.	 
+
+    3)
+
+1.	Use Batch Apex from (module - Asynchronous Apex) 
+2.	 
+3.	------------------------------------------------- 
+4.	SOURCE CODE1: LeadProcessor 
+5.	 
+6.	public class LeadProcessor implements Database.Batchable<sObject> { 
+7.	public Database.QueryLocator start(Database.BatchableContext bc) { 
+8.	return Database.getQueryLocator([Select LeadSource From Lead ]); 
+9.	} 
+10.	public void execute(Database.BatchableContext bc, List<Lead> leads){ 
+11.	for (Lead Lead : leads) { 
+12.	lead.LeadSource = 'Dreamforce'; 
+13.	} 
+14.	update leads; 
+15.	} 
+16.	public void finish(Database.BatchableContext bc){ 
+17.	} } 
+18.	 
+19.	------------------------------------------------- 
+20.	SOURCE CODE2: LeadProcessorTest 
+21.	 
+22.	@isTest 
+23.	public class LeadProcessorTest { 
+24.	@testSetup 
+25.	static void setup() { 
+26.	List<Lead> leads = new List<Lead>(); 
+27.	for(Integer counter=0 ;counter <200;counter++){ 
+28.	Lead lead = new Lead(); 
+29.	lead.FirstName ='FirstName'; 
+30.	lead.LastName ='LastName'+counter; 
+31.	lead.Company ='demo'+counter; 
+32.	leads.add(lead); 
+33.	} 
+34.	insert leads; 
+35.	} 
+36.	@isTest static void test() { 
+37.	Test.startTest(); 
+38.	LeadProcessor leadProcessor = new LeadProcessor(); 
+39.	Id batchId = Database.executeBatch(leadProcessor); 
+40.	Test.stopTest();    
+41.	    } } 
+42.	 
+
+
+4)
+
+1.	Control Processes with Queueable Apex from (module - Asynchronous Apex) 
+2.	 
+3.	------------------------------------------------- 
+4.	SOURCE CODE1: AddPrimaryContact 
+5.	 
+6.	public class AddPrimaryContact implements Queueable 
+7.	{ 
+8.	private Contact c; 
+9.	private String state; 
+10.	public AddPrimaryContact(Contact c, String state) 
+11.	{ 
+12.	this.c = c; 
+13.	this.state = state; 
+14.	} 
+15.	public void execute(QueueableContext context) 
+16.	{ 
+17.	List<Account> ListAccount = [SELECT ID, Name ,(Select id,FirstName,LastName from contacts ) FROM ACCOUNT WHERE BillingState = :state LIMIT 200]; 
+18.	List<Contact> lstContact = new List<Contact>(); 
+19.	for (Account acc:ListAccount) 
+20.	{ 
+21.	Contact cont = c.clone(false,false,false,false); 
+22.	cont.AccountId = acc.id; 
+23.	lstContact.add( cont ); 
+24.	} 
+25.	if(lstContact.size() >0 ) 
+26.	{ 
+27.	insert lstContact; 
+28.	}} } 
+29.	 
+30.	------------------------------------------------- 
+31.	SOURCE CODE2: AddPrimaryContactTest 
+32.	 
+33.	@isTest 
+34.	public class AddPrimaryContactTest { 
+35.	@isTest static void TestList() 
+36.	{ 
+37.	List<Account> Teste = new List <Account>(); 
+38.	for(Integer i=0;i<50;i++) 
+39.	{ 
+40.	Teste.add(new Account(BillingState = 'CA', name = 'Test'+i)); 
+41.	} 
+42.	for(Integer j=0;j<50;j++) 
+43.	{ 
+44.	Teste.add(new Account(BillingState = 'NY', name = 'Test'+j)); 
+45.	} 
+46.	insert Teste; 
+47.	Contact co = new Contact(); 
+48.	co.FirstName='demo'; 
+49.	co.LastName ='demo'; 
+50.	insert co; 
+51.	String state = 'CA'; 
+52.	AddPrimaryContact apc = new AddPrimaryContact(co, state); 
+53.	Test.startTest(); 
+54.	System.enqueueJob(apc); 
+55.	Test.stopTest(); 
+56.	      } }
+
+5)
+
+
+1.	Schedule Jobs Using the Apex Scheduler from (module - Asynchronous Apex) 
+2.	 
+3.	------------------------------------------------- 
+4.	SOURCE CODE1: DailyLeadProcessor 
+5.	 
+6.	public class DailyLeadProcessor implements Schedulable { 
+7.	Public void execute(SchedulableContext SC){ 
+8.	List<Lead> LeadObj=[SELECT Id from Lead where LeadSource=null limit 200]; 
+9.	for(Lead l:LeadObj){ 
+10.	l.LeadSource='Dreamforce'; 
+11.	update l; 
+12.	     } }} 
+13.	     
+14.	------------------------------------------------- 
+15.	SOURCE CODE1: DailyLeadProcessorTest 
+16.	 
+17.	@isTest 
+18.	private class DailyLeadProcessorTest { 
+19.	static testMethod void testDailyLeadProcessor() { 
+20.	String CRON_EXP = '0 0 1 * * ?'; 
+21.	List<Lead> lList = new List<Lead>(); 
+22.	for (Integer i = 0; i < 200; i++) { 
+23.	lList.add(new Lead(LastName='Dreamforce'+i, Company='Test1 Inc.', Status='Open - Not Contacted')); 
+24.	} 
+25.	insert lList; 
+26.	Test.startTest(); 
+27.	String jobId = System.schedule('DailyLeadProcessor', CRON_EXP, new DailyLeadProcessor());  
+28.	} }

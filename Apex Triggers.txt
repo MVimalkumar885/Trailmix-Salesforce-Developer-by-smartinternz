@@ -1,0 +1,86 @@
+Apex Triggers
+
+1.	 Get Started with Apex Triggers from (module - Apex Triggers) 
+2.	 
+3.	------------------------------------------------- 
+4.	Create an Apex trigger: 
+5.	Name: AccountAddressTrigger 
+6.	Object: Account 
+7.	 
+8.	SOURCE CODE: 
+9.	trigger AccountAddressTrigger on Account (before insert, before update) { 
+10.	for(Account a: Trigger.New){ 
+11.	if(a.Match_Billing_Address__c == true && a.BillingPostalCode!= null){ 
+12.	a.ShippingPostalCode=a.BillingPostalCode; 
+13.	     } 
+14.	    } 
+15.	}
+
+
+2)
+
+1.	  Bulk Apex Triggers from (module - Apex Triggers) 
+2.	 
+3.	 
+4.	------------------------------------------------- 
+5.	Create an Apex trigger: 
+6.	Name: ClosedOpportunityTrigger 
+7.	Object: Opportunity 
+8.	 
+9.	SOURCE CODE: 
+10.	trigger ClosedOpportunityTrigger on Opportunity (after insert, after update) { 
+11.	List<Task> taskList = new List<Task>(); 
+12.	for(Opportunity opp : [SELECT Id, StageName FROM Opportunity WHERE StageName='Closed Won' AND Id IN : Trigger.New]){ 
+13.	taskList.add(new Task(Subject='Follow Up Test Task', WhatId = opp.Id)); 
+14.	} 
+15.	if(taskList.size()>0){ 
+16.	insert tasklist; 
+17.	    } }
+
+
+3)
+
+1.	    Get Started with Apex Unit Tests from (module - Apex Testing) 
+2.	 
+3.	------------------------------------------------- 
+4.	Name: TestVerifyDate 
+5.	 
+6.	@isTest 
+7.	public class TestVerifyDate 
+8.	{ 
+9.	static testMethod void testMethod1() 
+10.	{ 
+11.	Date d = VerifyDate.CheckDates(System.today(),System.today()+1); 
+12.	Date d1 = VerifyDate.CheckDates(System.today(),System.today()+60); 
+13.	    } } 
+14.	 
+
+
+4)  
+
+1.	    Test Apex Triggers from (module - Apex Testing) 
+2.	 
+3.	 
+4.	------------------------------------------------- 
+5.	Name: TestRestrictContactByName 
+6.	 
+7.	SOURCE CODE: 
+8.	@isTest 
+9.	private class TestRestrictContactByName { 
+10.	static testMethod void metodoTest() 
+11.	{ 
+12.	List<Contact> listContact= new List<Contact>(); 
+13.	Contact c1 = new Contact(FirstName='Francesco', LastName='Riggio' , email='Test@test.com'); 
+14.	Contact c2 = new Contact(FirstName='Francesco1', LastName = 'INVALIDNAME',email='Test@test.com'); 
+15.	listContact.add(c1); 
+16.	listContact.add(c2); 
+17.	Test.startTest(); 
+18.	try 
+19.	{ 
+20.	insert listContact; 
+21.	} 
+22.	catch(Exception ee) 
+23.	{ 
+24.	} 
+25.	Test.stopTest();      
+26.	    }  }

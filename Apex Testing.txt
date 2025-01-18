@@ -1,0 +1,24 @@
+Apex Testing
+
+1.	    Create Test Data for Apex Tests from (module - Apex Testing) 
+2.	 
+3.	 
+4.	------------------------------------------------- 
+5.	Create an Apex class in the public scope 
+6.	Name: RandomContactFactory 
+7.	 
+8.	 
+9.	SOURCE CODE: 
+10.	//@isTest 
+11.	public class RandomContactFactory { 
+12.	public static List<Contact> generateRandomContacts(Integer numContactsToGenerate, String FName) { 
+13.	List<Contact> contactList = new List<Contact>(); 
+14.	for(Integer i=0;i<numContactsToGenerate;i++) { 
+15.	Contact c = new Contact(FirstName=FName + ' ' + i, LastName = 'Contact '+i); 
+16.	contactList.add(c); 
+17.	System.debug(c); 
+18.	} 
+19.	//insert contactList; 
+20.	System.debug(contactList.size()); 
+21.	return contactList; 
+22.	    } }

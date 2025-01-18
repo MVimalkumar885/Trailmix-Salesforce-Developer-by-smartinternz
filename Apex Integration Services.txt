@@ -1,0 +1,152 @@
+ Apex Integration Services
+
+1.	Apex REST Callouts from (module - Apex Integration Services) 
+2.	 
+3.	------------------------------------------------- 
+4.	SOURCE CODE: AnimalLocator 
+5.	 
+6.	public class AnimalLocator { 
+7.	public static String getAnimalNameById (Integer id) { 
+8.	String AnimalName = ''; 
+9.	Http http = new Http(); 
+10.	HttpRequest request = new HttpRequest(); 
+11.	request.setEndpoint('https://th-apex-http-callout.herokuapp.com/animals/'+id); 
+12.	request.setMethod('GET'); 
+13.	HttpResponse response = http.send(request); 
+14.	if (response.getStatusCode() == 200) { 
+15.	Map<String,Object> results = (Map<String,Object>) JSON.deserializeUntyped(response.getBody()); 
+16.	Map<String, Object> animal = (Map<String, Object>) results.get('animal'); 
+17.	animalName = (String) animal.get('name'); 
+18.	} 
+19.	return animalName; 
+20.	} } 
+21.	 
+22.	------------------------------------------------- 
+23.	SOURCE CODE: AnimalLocatorTest 
+24.	 
+25.	@isTest 
+26.	private class AnimalLocatorTest { 
+27.	@isTest static void testGet() { 
+28.	Test.setMock(HttpCalloutMock.class, new AnimalLocatorMock()); 
+29.	// Call method to test 
+30.	String result = AnimalLocator.getAnimalNameById (7); 
+31.	// Verify mock response is not null 
+32.	System.assertNotEquals(null,result, 
+33.	'The callout returned a null response.'); 
+34.	System.assertEquals('dog', result, 
+35.	'The animal name should be \'dog\''); 
+36.	} } 
+37.	 
+38.	------------------------------------------------- 
+39.	SOURCE CODE: AnimalLocatorMock 
+40.	 
+41.	@isTest 
+42.	global class AnimalLocatorMock implements HttpCalloutMock{ 
+43.	 
+44.	// Implement this interface method 
+45.	global HTTPResponse respond(HTTPRequest request) { 
+46.	// Create a fake response 
+47.	HttpResponse response = new HttpResponse(); 
+48.	response.setHeader('Content-Type', 'application/json'); 
+49.	response.setBody('{"animal":{"id":7,"name":"dog","eats":"meat","says":"i am a lovely pet animal"}}'); 
+50.	response.setStatusCode(200); 
+51.	return response; 
+52.	} }
+
+
+2)
+
+1.	Apex SOAP Callouts from (module - Apex Integration Services) 
+2.	 
+3.	 
+4.	Remote Site URL : https://th-apex-soap-service.herokuapp.com 
+5.	------------------------------------------------- 
+6.	SOURCE CODE: ParkLocator 
+7.	 
+8.	public class ParkLocator { 
+9.	public static string[] country(string theCountry) { 
+10.	ParkService.ParksImplPort parkSvc = new ParkService.ParksImplPort(); 
+11.	return parkSvc.byCountry(theCountry); 
+12.	} } 
+13.	 
+14.	------------------------------------------------- 
+15.	SOURCE CODE: ParkLocatorTest 
+16.	@isTest 
+17.	private class ParkLocatorTest { 
+18.	@isTest static void testCallout() { 
+19.	Test.setMock(WebServiceMock.class, new ParkServiceMock ()); 
+20.	String country = 'United States'; 
+21.	List<String> result = ParkLocator.country(country); 
+22.	List<String> parks = new List<String>{'Kaziranga National Park', 'Gir National Park', 'Deer Park'}; 
+23.	System.assertEquals(parks, result); 
+24.	} } 
+25.	 
+26.	------------------------------------------------- 
+27.	SOURCE CODE: ParkServiceMock 
+28.	@isTest 
+29.	global class ParkServiceMock implements WebServiceMock { 
+30.	global void doInvoke( 
+31.	Object stub, 
+32.	Object request, 
+33.	Map<String, Object> response, 
+34.	String endpoint, 
+35.	String soapAction, 
+36.	String requestName, 
+37.	String responseNS, 
+38.	String responseName, 
+39.	String responseType) { 
+40.	// start - specify the response you want to send 
+41.	ParkService.byCountryResponse response_x = new ParkService.byCountryResponse(); 
+42.	response_x.return_x = new List<String>{'Kaziranga National Park', 'Gir National Park', 'Deer Park'}; 
+43.	// end 
+44.	response.put('response_x', response_x); 
+45.	} }
+
+
+3)
+
+
+1.	Apex Web Services from (module - Apex Integration Services) 
+2.	 
+3.	------------------------------------------------- 
+4.	SOURCE CODE: AccountManager 
+5.	@RestResource(urlMapping='/Accounts/*/contacts') 
+6.	global class AccountManager { 
+7.	@HttpGet 
+8.	global static Account getAccount() { 
+9.	RestRequest req = RestContext.request; 
+10.	String accId = req.requestURI.substringBetween('Accounts/', '/contacts'); 
+11.	Account acc = [SELECT Id, Name, (SELECT Id, Name FROM Contacts) 
+12.	FROM Account WHERE Id = :accId]; 
+13.	return acc; 
+14.	    } 
+15.	} 
+16.	 
+17.	------------------------------------------------- 
+18.	SOURCE CODE: AccountManagerTest 
+19.	@isTest 
+20.	private class AccountManagerTest { 
+21.	private static testMethod void getAccountTest1() { 
+22.	Id recordId = createTestRecord(); 
+23.	// Set up a test request 
+24.	RestRequest request = new RestRequest(); 
+25.	request.requestUri = 'https://na1.salesforce.com/services/apexrest/Accounts/'+ recordId +'/contacts' ; 
+26.	request.httpMethod = 'GET'; 
+27.	RestContext.request = request; 
+28.	// Call the method to test 
+29.	Account thisAccount = AccountManager.getAccount(); 
+30.	// Verify results 
+31.	System.assert(thisAccount != null); 
+32.	System.assertEquals('Test record', thisAccount.Name); 
+33.	 
+34.	} 
+35.	// Helper method 
+36.	static Id createTestRecord() { 
+37.	// Create test record 
+38.	Account TestAcc = new Account( 
+39.	Name='Test record'); 
+40.	insert TestAcc; Contact TestCon= new Contact( 
+41.	LastName='Test', 
+42.	AccountId = TestAcc.id); 
+43.	return TestAcc.Id; 
+44.	}}
